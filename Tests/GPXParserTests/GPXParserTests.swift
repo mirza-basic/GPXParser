@@ -6,6 +6,18 @@ final class GPXParserTests: XCTestCase {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        XCTAssertEqual(GPXParser().text, "Hello, World!")
+        if let gpxURL = Bundle.module.url(forResource: "mystic_basin_trail", withExtension: "gpx") {
+            do {
+                let gpx = try GPXParser().parse(contentsOf: gpxURL)
+                gpx.metadata
+            } catch {
+                XCTFail(error.localizedDescription)
+            }
+            
+        } else {
+            XCTFail("Failed to find the .gpx resource!")
+        }
+
+
     }
 }

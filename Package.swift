@@ -20,9 +20,11 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "GPXParser",
-            dependencies: []),
+            dependencies: [],
+            resources: [.process("chatgpt.gpx"),
+                        .process("mystic_basin_trail.gpx")]),
         .testTarget(
             name: "GPXParserTests",
-            dependencies: ["GPXParser"]),
+            dependencies: ["GPXParser"])
     ]
 )
