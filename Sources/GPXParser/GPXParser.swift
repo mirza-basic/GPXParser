@@ -93,7 +93,7 @@ public class GPXParser: NSObject {
     /// # Example
     /// ```swift
     /// do {
-    ///     let gpx = try parseGPX(from: URL(string: "path/to/gpx/file.gpx")!)
+    ///     let gpx = try GPXParser().parseGPX(from: URL(string: "path/to/gpx/file.gpx")!)
     ///     print(gpx)
     /// } catch let error as GPXParserError {
     ///     print(error.localizedDescription)
@@ -133,9 +133,9 @@ public class GPXParser: NSObject {
     ///
     /// # Example
     /// ```swift
-    /// if let gpxData = Data(contentsOf: URL(string: "path/to/gpx/file.gpx")!) {
+    /// if let gpxData = try? Data(contentsOf: URL(string: "path/to/gpx/file.gpx")!) {
     ///     do {
-    ///         let gpx = try parseGPX(from: gpxData)
+    ///         let gpx = try GPXParser().parseGPX(from: gpxData)
     ///         print(gpx)
     ///     } catch let error as GPXParserError {
     ///         print(error.localizedDescription)
