@@ -7,107 +7,194 @@
 
 import Foundation
 
-public class GPXParser: NSObject {
-    private enum Element: String {
-        case gpx, metadata, wpt, ele, link, rte, rtept, trk,
-             trkseg, trkpt, author, copyright, bounds, name,
-             desc, year, license, email, time, url, urlname, text
-    }
+/// `GPXParser` is responsible for parsing GPX (GPS Exchange Format) data.
+///
+/// This parser supports both GPX versions 1.0 and 1.1. While both versions have differences in structure and elements,
+/// this parser handles these distinctions and parses GPX 1.0 data into the GPX 1.1 version structure for a uniform
+/// representation.
+///
+/// By leveraging this design, the parser ensures the consistent handling and representation of GPX data, regardless
+/// of its original version, making it easier for the subsequent processing and manipulation of the parsed data.
+fileprivate class GPXBuilder {
+    var gpx = GPX()
     
-    private enum Atribute: String {
-        case version, creator, lat, lon, href, author, minlat, minlon, maxlat, maxlon
-    }
+    // Variables for temporarily storing parsed data before attaching them to main `GPX` structure.
+    var currentMetadata: Metadata?
+    var currentWaypoint: Waypoint?
+    var currentLink: Link?
+    var currentRoute: Route?
+    var currentTrack: Track?
+    var currentSegment: TrackSegment?
+    var currentAuthor: Author?
+    var currentCopyright: Copyright?
+    var currentBounds: Bounds?
+    var currentValue: String?
     
-    private var gpx: GPX = GPX()
-    private var elementStack: [Element] = []
-    private var currentElement: Element?
-    private var currentMetadata: Metadata?
-    private var currentWaypoint: Waypoint?
-    private var currentLink: Link?
-    private var currentRoute: Route?
-    private var currentTrack: Track?
-    private var currentSegment: TrackSegment?
-    private var currentAuthor: Author?
-    private var currentCopyright: Copyright?
-    private var currentBounds: Bounds?
-    private var currentValue: String?
-    
-    private let dateFormatter: DateFormatter = {
+    // Date formatter for handling time strings in the GPX XML.
+    let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return dateFormatter
     }()
-    
-    public func parse(contentsOf url: URL) throws -> GPX {
-        let parser = XMLParser(contentsOf: url)
-        parser?.delegate = self
-        if parser?.parse() == true {
-            return gpx
+}
+
+public class GPXParser: NSObject {
+    /// Defines the supported XML elements within the GPX format.
+    private enum Element: String {
+        case gpx, metadata, wpt, ele, link, rte, rtept, trk,
+             trkseg, trkpt, author, copyright, bounds, name,
+             desc, year, license, email, time, url, urlname, text
+        
+        static var stacked: [Element] {
+            [.wpt, .rte, .rtept, .trk, .trkseg, .trkpt, .metadata, .link, .author]
         }
-        throw parser?.parserError ?? GPXParserError.general
+    }
+    /// Defines the supported XML attributes within the GPX format.
+    private enum Atribute: String {
+        case version, creator, lat, lon, href, author, minlat, minlon, maxlat, maxlon
+    }
+    
+    /// The `GPXBuilder` instance used by the parser to build a `GPX` object from XML data.
+    ///
+    /// This builder keeps track of the current state and provides methods to accumulate data
+    /// as the XML parsing progresses. It also encapsulates the complex object creation logic
+    /// ensuring that the `GPXParser` focuses only on parsing tasks.
+    private var builder: GPXBuilder = GPXBuilder()
+    
+    /// A stack to keep track of the nested XML elements as they are parsed.
+    ///
+    /// This stack helps to understand the context or hierarchy of the XML as it's parsed.
+    /// For instance, when an element closes, this stack helps determine its parent element
+    /// and decide where the parsed data should be stored. This is especially useful for XML
+    /// formats like GPX which can have deeply nested structures.
+    private var elementStack: [Element] = []
+    
+    /// The current XML element being processed by the parser.
+    ///
+    /// This property is updated every time the parser starts or ends processing an element.
+    /// It helps in determining what action should be taken based on the current element and its content.
+    private var currentElement: Element?
+   
+    /// Parses a GPX (GPS Exchange Format) file from a given `URL`.
+    ///
+    /// This function attempts to initialize an XML parser with the given URL and parse the GPX contents.
+    /// If the parsing is successful, it returns a `GPX` object. In case of failure, appropriate `GPXParserError`
+    /// is thrown to provide detailed information about the error.
+    ///
+    /// - Parameter url: The `URL` pointing to the GPX file to be parsed.
+    ///
+    /// - Throws:
+    ///   - `GPXParserError.initializationError` if the XML parser fails to initialize with the provided URL.
+    ///   - `GPXParserError.parsingError` if there's a specific error during parsing.
+    ///   - `GPXParserError.general` for non-specific errors that occur during parsing.
+    ///
+    /// - Returns: A `GPX` object representing the parsed data.
+    ///
+    /// # Example
+    /// ```swift
+    /// do {
+    ///     let gpx = try parseGPX(from: URL(string: "path/to/gpx/file.gpx")!)
+    ///     print(gpx)
+    /// } catch let error as GPXParserError {
+    ///     print(error.localizedDescription)
+    /// }
+    /// ```
+    public func parseGPX(from url: URL) throws -> GPX {
+        guard let parser = XMLParser(contentsOf: url) else {
+            throw GPXParserError.initializationError("Failed to initialize the XML parser with the given URL.")
+        }
+        
+        parser.delegate = self
+        
+        if parser.parse() {
+            return builder.gpx
+        } else {
+            if let specificError = parser.parserError {
+                throw GPXParserError.parsingError(specificError.localizedDescription)
+            } else {
+                throw GPXParserError.general("Unknown parsing error occurred.")
+            }
+        }
+    }
+    
+    /// Parses a GPX (GPS Exchange Format) data from a given `Data` object.
+    ///
+    /// This function attempts to initialize an XML parser with the provided data and parse the GPX contents.
+    /// If the parsing is successful, it returns a `GPX` object. In case of failure, an appropriate `GPXParserError`
+    /// is thrown to provide detailed information about the error.
+    ///
+    /// - Parameter data: The `Data` object containing GPX formatted content.
+    ///
+    /// - Throws:
+    ///   - `GPXParserError.parsingError` if there's a specific error during parsing.
+    ///   - `GPXParserError.general` for non-specific errors that occur during parsing.
+    ///
+    /// - Returns: A `GPX` object representing the parsed data.
+    ///
+    /// # Example
+    /// ```swift
+    /// if let gpxData = Data(contentsOf: URL(string: "path/to/gpx/file.gpx")!) {
+    ///     do {
+    ///         let gpx = try parseGPX(from: gpxData)
+    ///         print(gpx)
+    ///     } catch let error as GPXParserError {
+    ///         print(error.localizedDescription)
+    ///     }
+    /// }
+    /// ```
+    public func parseGPX(from data: Data) throws -> GPX {
+        let parser = XMLParser(data: data)
+        parser.delegate = self
+        
+        if parser.parse() {
+            return builder.gpx
+        } else {
+            if let specificError = parser.parserError {
+                throw GPXParserError.parsingError(specificError.localizedDescription)
+            } else {
+                throw GPXParserError.general("Unknown parsing error occurred.")
+            }
+        }
     }
 }
 
+// MARK: - XMLParserDelegate
+
+/// Extension of GPXParser to conform to the XMLParserDelegate protocol. This extension manages the parsing
+/// of the GPX (GPS Exchange Format) XML data, transforming the XML elements into their corresponding GPX objects.
 extension GPXParser: XMLParserDelegate {
     public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         guard let element = Element(rawValue: elementName) else {
             return
         }
-        currentValue = nil
+        builder.currentValue = nil
         currentElement = element
         
-        switch element {
-        case .wpt, .rte, .rtept, .trk, .trkseg, .trkpt, .metadata, .link, .author:
+        if Element.stacked.contains(element) {
             elementStack.append(element)
-        default:
-            break
         }
         
         switch currentElement {
         case .gpx:
-            if let version = attributeDict[Atribute.version.rawValue] {
-                gpx.version = GPXVersion(rawValue: version)
-            }
-            gpx.creator = attributeDict[Atribute.creator.rawValue]
-
-            if gpx.version == .v1_0 {
-                elementStack.append(.metadata)
-                currentLink = Link()
-                currentMetadata = Metadata()
-                currentAuthor = Author()
-            }
+            prepareGPX(attributeDict: attributeDict)
         case .metadata:
-            currentMetadata = Metadata()
+            builder.currentMetadata = Metadata()
         case .wpt, .trkpt, .rtept:
-            if let lat = Double(attributeDict[Atribute.lat.rawValue] ?? ""),
-               let lon = Double(attributeDict[Atribute.lon.rawValue] ?? "") {
-                currentWaypoint = Waypoint(latitude: lat, longitude: lon)
-            }
+            prepareWaypoint(attributeDict: attributeDict)
         case .link:
-            if let href = URL(string: attributeDict[Atribute.href.rawValue] ?? "") {
-                currentLink = Link(href: href)
-            }
+            prepareLink(attributeDict: attributeDict)
         case .rte:
-            currentRoute = Route()
+            builder.currentRoute = Route()
         case .trk:
-            currentTrack = Track()
+            builder.currentTrack = Track()
         case .trkseg:
-            currentSegment = TrackSegment()
+            builder.currentSegment = TrackSegment()
         case .author:
-            if gpx.version == .v1_1 {
-                currentAuthor = Author()
-            }
+            prepareAuthor()
         case .copyright:
-            if let author = attributeDict[Atribute.author.rawValue] {
-                currentCopyright = Copyright(author: author)
-            }
+           prepareCopyright(attributeDict: attributeDict)
         case .bounds:
-            if let minLat = Double(attributeDict[Atribute.minlat.rawValue] ?? ""),
-               let minLon = Double(attributeDict[Atribute.minlon.rawValue] ?? ""),
-               let maxLat = Double(attributeDict[Atribute.maxlat.rawValue] ?? ""),
-               let maxLon = Double(attributeDict[Atribute.maxlon.rawValue] ?? "") {
-                currentBounds = Bounds(minLat: minLat, minLon: minLon, maxLat: maxLat, maxLon: maxLon)
-            }
+           prepareBounds(attributeDict: attributeDict)
         default:
             break
         }
@@ -116,7 +203,7 @@ extension GPXParser: XMLParserDelegate {
     public func parser(_ parser: XMLParser, foundCharacters string: String) {
         let value = string.trimmingCharacters(in: .whitespacesAndNewlines)
         if !value.isEmpty {
-            currentValue = value
+            builder.currentValue = value
         }
     }
     
@@ -124,142 +211,315 @@ extension GPXParser: XMLParserDelegate {
         guard let element = Element(rawValue: elementName) else {
             return
         }
+        
         currentElement = element
         let parentElement = elementStack.last
         switch currentElement {
         case .gpx:
-            if gpx.version == .v1_0 {
-                currentAuthor?.link = currentLink
-                currentMetadata?.author = currentAuthor
-                gpx.metadata = currentMetadata
-                currentMetadata = nil
-            }
+            handleGPX()
         case .metadata:
-            gpx.metadata = currentMetadata
-            currentMetadata = nil
-            _ = elementStack.popLast()
+           handleMetadata()
         case .wpt:
-            if let waypoint = currentWaypoint {
-                gpx.waypoints.append(waypoint)
-            }
-            currentWaypoint = nil
-            _ = elementStack.popLast()
+            handleWaypoint()
         case .ele:
-            if let currentValue, let elevation = Double(currentValue) {
-                currentWaypoint?.elevation = elevation
-            }
+            handleElevation()
         case .link:
-            if let link = currentLink {
-                currentMetadata?.links?.append(link)
-            }
-            currentLink = nil
-            _ = elementStack.popLast()
+            handleLink()
         case .url:
-            if gpx.version == .v1_0 {
-                currentLink?.href = URL(string: currentValue ?? "")
-            }
+            handleUrl()
         case .urlname:
-            if gpx.version == .v1_0 {
-                currentLink?.text = currentValue
-            }
+            handleUrlName()
         case .rte:
-            if let route = currentRoute {
-                gpx.routes.append(route)
-            }
-            currentRoute = nil
-            _ = elementStack.popLast()
+            handleRoute()
         case .rtept:
-            if let routePoint = currentWaypoint {
-                currentRoute?.routePoints.append(routePoint)
-            }
-            currentWaypoint = nil
-            _ = elementStack.popLast()
+            handleRoutePoint()
         case .trk:
-            if let track = currentTrack {
-                gpx.tracks.append(track)
-            }
-            currentTrack = nil
-            _ = elementStack.popLast()
+            handleTrack()
         case .trkseg:
-            if let segment = currentSegment {
-                currentTrack?.segments.append(segment)
-            }
-            currentSegment = nil
-            _ = elementStack.popLast()
+           handleTrackSegment()
         case .trkpt:
-            if let trackpoint = currentWaypoint {
-                currentSegment?.trackpoints.append(trackpoint)
-            }
-            currentWaypoint = nil
-            _ = elementStack.popLast()
+           handleTrackpoint()
         case .author:
-            if gpx.version == .v1_0 {
-                currentAuthor?.name = currentValue
-            } else {
-                currentMetadata?.author = currentAuthor
-                currentAuthor = nil
-            }
-            _ = elementStack.popLast()
+            handleAuthor()
         case .copyright:
-            currentMetadata?.copyright = currentCopyright
-            currentCopyright = nil
+            handleCopright()
         case .bounds:
-            currentMetadata?.bounds = currentBounds
-            currentBounds = nil
+            handleBounds()
         case .time:
-            if let currentValue, let date = dateFormatter.date(from: currentValue) {
-                switch parentElement {
-                case .metadata:
-                    currentMetadata?.time = date
-                case .wpt, .rtept, .trkpt:
-                    currentWaypoint?.time = date
-                default:
-                    break
-                }
-            }
+            handleTime(parent: parentElement)
         case .name:
-            switch parentElement {
-            case .metadata:
-                currentMetadata?.name = currentValue
-            case .wpt, .rtept, .trkpt:
-                currentWaypoint?.name = currentValue
-            case .rte:
-                currentRoute?.name = currentValue
-            case .trk:
-                currentTrack?.name = currentValue
-            case .author:
-                currentAuthor?.name = currentValue
-            default:
-                break
-            }
+           handleName(parent: parentElement)
         case .desc:
-            switch parentElement {
-            case .metadata:
-                currentMetadata?.desc = currentValue
-            case .wpt, .rtept, .trkpt:
-                currentWaypoint?.desc = currentValue
-            case .rte:
-                currentRoute?.desc = currentValue
-            case .trk:
-                currentTrack?.desc = currentValue
-            default:
-                break
-            }
+           handleDescription(parent: parentElement)
         case .text:
-            switch parentElement {
-            case .link:
-                currentLink?.text = currentValue
-            default:
-                break
-            }
+           handleLinkText(parent: parentElement)
         case .year:
-            currentCopyright?.year = currentValue
+            builder.currentCopyright?.year = builder.currentValue
         case .license:
-            currentCopyright?.license = URL(string: currentValue ?? "")
+            builder.currentCopyright?.license = URL(string: builder.currentValue ?? "")
         case .email:
-            currentAuthor?.email = currentValue
+            builder.currentAuthor?.email = builder.currentValue
         default:
             break
+        }
+          
+        if Element.stacked.contains(element) {
+            _ = elementStack.removeLast()
+        }
+    }
+}
+
+// MARK: - Preparation Functions
+
+/// Extension containing helper functions for preparing the `GPXParser` state based on parsed XML attributes.
+extension GPXParser {
+    
+    /// Prepares the GPX object by setting its version and creator.
+    /// - Parameter attributeDict: The attributes dictionary associated with the GPX element.
+    private func prepareGPX(attributeDict: [String : String]) {
+        if let version = attributeDict[Atribute.version.rawValue] {
+            builder.gpx.version = GPXVersion(rawValue: version)
+        }
+        builder.gpx.creator = attributeDict[Atribute.creator.rawValue]
+
+        if builder.gpx.version == .v1_0 {
+            elementStack.append(.metadata)
+            builder.currentLink = Link()
+            builder.currentMetadata = Metadata()
+            builder.currentAuthor = Author()
+        }
+    }
+    
+    /// Prepares a waypoint object based on latitude and longitude attributes.
+    /// - Parameter attributeDict: The attributes dictionary associated with the waypoint element.
+    private func prepareWaypoint(attributeDict: [String : String]) {
+        if let latValue = attributeDict[Atribute.lat.rawValue], let lat = Double(latValue),
+           let lonValue = attributeDict[Atribute.lon.rawValue], let lon = Double(lonValue) {
+            builder.currentWaypoint = Waypoint(latitude: lat, longitude: lon)
+        }
+    }
+    
+    /// Prepares a link object using href attribute.
+    /// - Parameter attributeDict: The attributes dictionary associated with the link element.
+    private func prepareLink(attributeDict: [String : String]) {
+        if let hrefValue = attributeDict[Atribute.href.rawValue], let href = URL(string: hrefValue) {
+            builder.currentLink = Link(href: href)
+        }
+    }
+    
+    /// Prepares an author object based on the GPX version.
+    private func prepareAuthor() {
+        if builder.gpx.version == .v1_1 {
+            builder.currentAuthor = Author()
+        }
+    }
+    
+    /// Prepares a copyright object using the author attribute.
+    /// - Parameter attributeDict: The attributes dictionary associated with the copyright element.
+    private func prepareCopyright(attributeDict: [String : String]) {
+        if let author = attributeDict[Atribute.author.rawValue] {
+            builder.currentCopyright = Copyright(author: author)
+        }
+    }
+    
+    /// Prepares a bounds object using minimum and maximum latitude and longitude attributes.
+    /// - Parameter attributeDict: The attributes dictionary associated with the bounds element.
+    private func prepareBounds(attributeDict: [String : String]) {
+        if let minLatValue = attributeDict[Atribute.minlat.rawValue], let minLat = Double(minLatValue),
+           let minLonValue = attributeDict[Atribute.minlon.rawValue], let minLon = Double(minLonValue),
+           let maxLatValue = attributeDict[Atribute.maxlat.rawValue], let maxLat = Double(maxLatValue),
+           let maxLonValue = attributeDict[Atribute.maxlon.rawValue], let maxLon = Double(maxLonValue) {
+            builder.currentBounds = Bounds(minLat: minLat, minLon: minLon, maxLat: maxLat, maxLon: maxLon)
+        }
+    }
+}
+
+// MARK: - Handler Functions
+
+/// Extension containing helper functions to handle the completion of parsed XML elements,
+/// and update the state or structures of the `GPXParser`.
+extension GPXParser {
+    
+    /// Handles the description of different GPX elements based on their parent.
+    /// - Parameter parent: The parent GPX element.
+    private func handleDescription(parent: Element?) {
+        switch parent {
+        case .metadata:
+            builder.currentMetadata?.desc = builder.currentValue
+        case .wpt, .rtept, .trkpt:
+            builder.currentWaypoint?.desc = builder.currentValue
+        case .rte:
+            builder.currentRoute?.desc = builder.currentValue
+        case .trk:
+            builder.currentTrack?.desc = builder.currentValue
+        default:
+            break
+        }
+    }
+    
+    /// Processes the name of various GPX elements based on their parent element.
+    /// - Parameter parent: The parent GPX element.
+    private func handleName(parent: Element?) {
+        switch parent {
+        case .metadata:
+            builder.currentMetadata?.name = builder.currentValue
+        case .wpt, .rtept, .trkpt:
+            builder.currentWaypoint?.name = builder.currentValue
+        case .rte:
+            builder.currentRoute?.name = builder.currentValue
+        case .trk:
+            builder.currentTrack?.name = builder.currentValue
+        case .author:
+            builder.currentAuthor?.name = builder.currentValue
+        default:
+            break
+        }
+    }
+    
+    /// Processes the time data for specific GPX elements.
+    /// - Parameter parent: The parent GPX element.
+    private func handleTime(parent: Element?) {
+        guard let value = builder.currentValue, let date = builder.dateFormatter.date(from: value) else {
+            return
+        }
+        switch parent {
+        case .metadata:
+            builder.currentMetadata?.time = date
+        case .wpt, .rtept, .trkpt:
+            builder.currentWaypoint?.time = date
+        default:
+            break
+        }
+    }
+    
+    /// Updates the author information based on the GPX version.
+    private func handleAuthor() {
+        if builder.gpx.version == .v1_0 {
+            builder.currentAuthor?.name = builder.currentValue
+        } else {
+            builder.currentMetadata?.author = builder.currentAuthor
+            builder.currentAuthor = nil
+        }
+    }
+    
+    /// Adds a trackpoint to the current segment.
+    private func handleTrackpoint() {
+        guard let trackpoint = builder.currentWaypoint else {
+            return
+        }
+        builder.currentSegment?.trackpoints.append(trackpoint)
+        builder.currentWaypoint = nil
+    }
+    
+    /// Appends a track segment to the current track.
+    private func handleTrackSegment() {
+        guard let segment = builder.currentSegment else {
+            return
+        }
+        builder.currentTrack?.segments.append(segment)
+        builder.currentSegment = nil
+    }
+    
+    /// Appends a track to the GPX structure.
+    private func handleTrack() {
+        guard let track = builder.currentTrack else {
+            return
+        }
+        builder.gpx.tracks.append(track)
+        builder.currentTrack = nil
+    }
+    
+    /// Adds a route point to the current route.
+    private func handleRoutePoint() {
+        guard let routePoint = builder.currentWaypoint else {
+            return
+        }
+        builder.currentRoute?.routePoints.append(routePoint)
+        builder.currentWaypoint = nil
+    }
+    
+    /// Appends a route to the GPX structure.
+    private func handleRoute() {
+        guard let route = builder.currentRoute else {
+            return
+        }
+        builder.gpx.routes.append(route)
+        builder.currentRoute = nil
+    }
+    
+    /// Sets the text of a link element.
+    /// - Parameter parent: The parent GPX element.
+    private func handleLinkText(parent: Element?) {
+        if parent == .link {
+            builder.currentLink?.text = builder.currentValue
+        }
+    }
+    
+    /// Updates the bounds of the current metadata object.
+    private func handleBounds() {
+        builder.currentMetadata?.bounds = builder.currentBounds
+        builder.currentBounds = nil
+    }
+    
+    /// Sets the copyright for the current metadata.
+    private func handleCopright() {
+        builder.currentMetadata?.copyright = builder.currentCopyright
+        builder.currentCopyright = nil
+    }
+    
+    /// Sets the URL name for a link based on the GPX version.
+    private func handleUrlName() {
+        if builder.gpx.version == .v1_0 {
+            builder.currentLink?.text = builder.currentValue
+        }
+    }
+    
+    /// Sets the URL for a link based on the GPX version.
+    private func handleUrl() {
+        if builder.gpx.version == .v1_0, let url = builder.currentValue  {
+            builder.currentLink?.href = URL(string: url)
+        }
+    }
+    
+    /// Appends a link to the current metadata.
+    private func handleLink() {
+        guard let link = builder.currentLink else {
+            return
+        }
+        builder.currentMetadata?.links?.append(link)
+        builder.currentLink = nil
+    }
+    
+    /// Sets the elevation for the current waypoint.
+    private func handleElevation() {
+        guard let elevation = builder.currentValue else {
+            return
+        }
+        builder.currentWaypoint?.elevation = Double(elevation)
+    }
+    
+    /// Appends a waypoint to the GPX structure.
+    private func handleWaypoint() {
+        guard let waypoint = builder.currentWaypoint else {
+            return
+        }
+        builder.gpx.waypoints.append(waypoint)
+        builder.currentWaypoint = nil
+    }
+    
+    /// Sets the metadata for the GPX structure.
+    private func handleMetadata() {
+        builder.gpx.metadata = builder.currentMetadata
+        builder.currentMetadata = nil
+    }
+    
+    /// Processes the GPX element's ending, applying metadata and author information if needed.
+    private func handleGPX() {
+        if builder.gpx.version == .v1_0 {
+            builder.currentAuthor?.link = builder.currentLink
+            builder.currentMetadata?.author = builder.currentAuthor
+            builder.gpx.metadata = builder.currentMetadata
+            builder.currentMetadata = nil
         }
     }
 }

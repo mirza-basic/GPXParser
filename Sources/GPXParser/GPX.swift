@@ -4,70 +4,127 @@
 //
 //  Created by Mirza Basic on 6. 8. 2023..
 //
-
 import Foundation
 
-// Type Aliases
-typealias Latitude = Double
-typealias Longitude = Double
-typealias Elevation = Double
+public typealias Latitude = Double
+public typealias Longitude = Double
+public typealias Elevation = Double
 
-// Main GPX Structure
+/// The main structure representing a GPX (GPS Exchange Format) object. GPX is an XML schema designed for the interchange of GPS data.
+///
+/// # Features
+/// - Represents both versions 1.0 and 1.1 of the GPX format.
+/// - Provides methods and properties to easily navigate and modify the GPX structure.
 public struct GPX: Codable {
-    var version: GPXVersion?
-    var creator: String?
-    var metadata: Metadata?
-    var waypoints: [Waypoint] = []
-    var routes: [Route] = []
-    var tracks: [Track] = []
-    var extensions: Extensions?
-
+    
+    /// The version of the GPX schema.
+    public var version: GPXVersion?
+    
+    /// The software or device that created the GPX content.
+    public var creator: String?
+    
+    /// Metadata about the GPX file and its content.
+    public var metadata: Metadata?
+    
+    /// An array of geographic waypoints.
+    public var waypoints: [Waypoint] = []
+    
+    /// An array of routes, each representing an ordered list of waypoints.
+    public var routes: [Route] = []
+    
+    /// An array of tracks, each representing an ordered set of points describing a path.
+    public var tracks: [Track] = []
+    
     enum CodingKeys: String, CodingKey {
         case version, creator, metadata
         case waypoints = "wpt"
         case routes = "rte"
         case tracks = "trk"
-        case extensions = "extensions"
     }
 }
 
 // MARK: - Version
 
-enum GPXVersion: String, Codable {
+/// Represents GPX versions supported.
+public enum GPXVersion: String, Codable {
     case v1_1 = "1.1"
     case v1_0 = "1.0"
 }
 
 // MARK: - Metadata
-struct Metadata: Codable {
-    var name: String?
-    var desc: String?
-    var author: Author?
-    var copyright: Copyright?
-    var links: [Link]? = []
-    var time: Date?
-    var keywords: String?
-    var bounds: Bounds?
-    var extensions: Extensions?
+
+/// Metadata about the GPX file.
+public struct Metadata: Codable {
+    
+    /// The name of the GPX file.
+    public var name: String?
+    
+    /// A description of the GPX file.
+    public var desc: String?
+    
+    /// The person or organization who created the GPX file.
+    public var author: Author?
+    
+    /// Copyright details for the GPX file.
+    public var copyright: Copyright?
+    
+    /// An array of links related to the content in the GPX file.
+    public var links: [Link]? = []
+    
+    /// The timestamp when the data was created.
+    public var time: Date?
+    
+    /// Keywords associated with the GPX file.
+    public var keywords: String?
+    
+    /// Minimum and maximum coordinates which describe the extent of the coordinates in the GPX file.
+    public var bounds: Bounds?
 }
 
-struct Author: Codable {
-    var name: String?
-    var email: String?
-    var link: Link?
+// MARK: - Author
+
+/// Author of the GPX content.
+public struct Author: Codable {
+    
+    /// Name of the author.
+    public var name: String?
+    
+    /// Email address of the author.
+    public var email: String?
+    
+    /// Link to the web site or other external information about the author.
+    public var link: Link?
 }
 
-struct Copyright: Codable {
-    var author: String?
-    var year: String?
-    var license: URL?
+// MARK: - Copyright
+
+/// Copyright information of the GPX content.
+public struct Copyright: Codable {
+    
+    /// Name of the copyright holder.
+    public var author: String?
+    
+    /// Year of the copyright.
+    public var year: String?
+    
+    /// URL linking to the license on the web.
+    public var license: URL?
 }
 
-struct Link: Codable {
-    var href: URL?
-    var text: String?
-    var type: String?
+// MARK: - Link
 
+/// A link to external resources or references.
+public struct Link: Codable {
+    
+    /// The URL of the hyperlink.
+    public var href: URL?
+    
+    /// Descriptive text for the hyperlink.
+    public var text: String?
+    
+    /// Mime type of the content (e.g., "text/html").
+    public var type: String?
+    
     enum CodingKeys: String, CodingKey {
         case href
         case text = "text"
@@ -75,11 +132,22 @@ struct Link: Codable {
     }
 }
 
-struct Bounds: Codable {
-    var minLat: Latitude
-    var minLon: Longitude
-    var maxLat: Latitude
-    var maxLon: Longitude
+// MARK: - Bounds
+
+/// Bounds that define the spatial extent of the GPX file.
+public struct Bounds: Codable {
+    
+    /// Minimum latitude of the bounding box.
+    public var minLat: Latitude
+    
+    /// Minimum longitude of the bounding box.
+    public var minLon: Longitude
+    
+    /// Maximum latitude of the bounding box.
+    public var maxLat: Latitude
+    
+    /// Maximum longitude of the bounding box.
+    public var maxLon: Longitude
 
     enum CodingKeys: String, CodingKey {
         case minLat = "minlat"
@@ -89,29 +157,72 @@ struct Bounds: Codable {
     }
 }
 
-// MARK: - Waypoints, Routes, and Tracks
-struct Waypoint: Codable {
-    var latitude: Latitude
-    var longitude: Longitude
-    var elevation: Elevation?
-    var time: Date?
-    var magneticVariation: Double?
-    var geoidHeight: Double?
-    var name: String?
-    var cmt: String?
-    var desc: String?
-    var src: String?
-    var links: [Link]?
-    var sym: String?
-    var type: String?
-    var fix: String?
-    var sat: Int?
-    var hdop: Double?
-    var vdop: Double?
-    var pdop: Double?
-    var ageOfDGPSData: Double?
-    var dgpsID: Int?
-    var extensions: Extensions?
+// MARK: - Waypoint
+
+/// Represents a geographic waypoint, which is a specific point on Earth defined by its latitude, longitude, and optional additional attributes.
+///
+/// A waypoint can be anything from a notable landmark to a desired destination or a point of interest.
+public struct Waypoint: Codable {
+    
+    /// Latitude of the waypoint. A valid value is between -90 and 90.
+    public var latitude: Latitude
+
+    /// Longitude of the waypoint. A valid value is between -180 and 180.
+    public var longitude: Longitude
+    
+    /// Elevation of the waypoint in meters above sea level. This is optional as not all waypoints may have elevation data.
+    public var elevation: Elevation?
+    
+    /// The time the waypoint was recorded. This can be useful for tracking movements or determining when the waypoint was created.
+    public var time: Date?
+    
+    /// Magnetic variation (in degrees) at the waypoint. This can be used for navigation purposes.
+    public var magneticVariation: Double?
+    
+    /// Height (in meters) of the geoid (mean sea level) above the WGS84 earth ellipsoid. Useful in geodetic computations.
+    public var geoidHeight: Double?
+    
+    /// The name or label of the waypoint.
+    public var name: String?
+    
+    /// Comment about the waypoint. Can be used to store additional information about the waypoint.
+    public var cmt: String?
+    
+    /// A description of the waypoint. Can provide more detailed information than the comment.
+    public var desc: String?
+    
+    /// Source of the waypoint data.
+    public var src: String?
+    
+    /// Links to additional information about the waypoint.
+    public var links: [Link]?
+    
+    /// Text representation (e.g., a symbol) for displaying the waypoint on maps.
+    public var sym: String?
+    
+    /// Type classification of the waypoint (e.g., "campground", "water source").
+    public var type: String?
+    
+    /// The type of GPS fix. Examples include: "dgps", "pps", "fix", "none".
+    public var fix: String?
+    
+    /// Number of satellites used to determine the GPS fix.
+    public var sat: Int?
+    
+    /// Horizontal dilution of precision. Represents the error in the horizontal position.
+    public var hdop: Double?
+    
+    /// Vertical dilution of precision. Represents the error in the vertical position.
+    public var vdop: Double?
+    
+    /// Overall dilution of precision of the fix.
+    public var pdop: Double?
+    
+    /// Age of the differential GPS (DGPS) data in seconds.
+    public var ageOfDGPSData: Double?
+    
+    /// ID of the DGPS station used to determine the fix.
+    public var dgpsID: Int?
 
     enum CodingKeys: String, CodingKey {
         case latitude = "lat"
@@ -119,62 +230,95 @@ struct Waypoint: Codable {
         case elevation = "ele"
         case time, magneticVariation = "magvar", geoidHeight = "geoidheight", name, cmt, desc, src
         case links = "link"
-        case sym, type, fix, sat, hdop, vdop, pdop, ageOfDGPSData, dgpsID, extensions
+        case sym, type, fix, sat, hdop, vdop, pdop, ageOfDGPSData, dgpsID
     }
 }
 
-struct Route: Codable {
-    var name: String?
-    var cmt: String?
-    var desc: String?
-    var src: String?
-    var links: [Link] = []
-    var number: Int?
-    var type: String?
-    var routePoints: [Waypoint] = []
-    var extensions: Extensions?
+// MARK: - TraRouteck
 
+/// Represents a route in GPX, which is an ordered list of waypoints representing a series of turn points leading to a destination.
+///
+/// A route is intended to provide navigation instructions to a particular destination, often created by a user on a device or application and can be followed for guidance.
+public struct Route: Codable {
+    
+    /// The name or title of the route. This can be used to provide a quick reference or label for the route.
+    public var name: String?
+    
+    /// Comment regarding the route. Useful for storing additional context or brief notes about the route.
+    public var cmt: String?
+    
+    /// A detailed description of the route. This can provide more in-depth information or instructions about the route.
+    public var desc: String?
+    
+    /// Source of the route data. Can be used to track where the route information originated or was derived from.
+    public var src: String?
+    
+    /// Links to web pages or other external sources of information related to the route.
+    public var links: [Link] = []
+    
+    /// A number or identifier for the route, which can be useful for organizing or ordering routes.
+    public var number: Int?
+    
+    /// A classification or type of the route. For example, "hiking", "cycling", "driving".
+    public var type: String?
+    
+    /// An ordered list of waypoints that make up the route. These can be used for navigation purposes.
+    public var routePoints: [Waypoint] = []
+    
     enum CodingKeys: String, CodingKey {
         case name, cmt, desc, src
         case links = "link"
         case number, type
         case routePoints = "rtept"
-        case extensions
     }
 }
 
-struct Track: Codable {
-    var name: String?
-    var cmt: String?
-    var desc: String?
-    var src: String?
-    var links: [Link] = []
-    var number: Int?
-    var type: String?
-    var segments: [TrackSegment] = []
-    var extensions: Extensions?
+// MARK: - Track
+
+/// Represents a track in GPX, which is an ordered set of points describing the path of the track.
+///
+/// A track differs from a route in that it typically represents a recorded path. While a route is a set of turn points to be followed, a track represents where one has been.
+public struct Track: Codable {
+    
+    /// The name or label of the track. Can be used as a quick reference or identifier.
+    public var name: String?
+    
+    /// Comment about the track. Useful for adding brief notes or context.
+    public var cmt: String?
+    
+    /// A more detailed description of the track, which can provide insights or specifics about the journey or path taken.
+    public var desc: String?
+    
+    /// Source of the track data. Can provide information about where or how the track was recorded.
+    public var src: String?
+    
+    /// Links to web pages or other external sources of information related to the track.
+    public var links: [Link] = []
+    
+    /// A number or identifier for the track, useful for organizing or sequencing tracks.
+    public var number: Int?
+    
+    /// Classification or type of the track, e.g., "hiking", "cycling", "driving".
+    public var type: String?
+    
+    /// Segments that make up the track. A track can have multiple segments, which can represent different parts or phases of the journey.
+    public var segments: [TrackSegment] = []
 
     enum CodingKeys: String, CodingKey {
         case name, cmt, desc, src
         case links = "link"
         case number, type
         case segments = "trkseg"
-        case extensions
     }
 }
 
-struct TrackSegment: Codable {
-    var trackpoints: [Waypoint] = []
-    var extensions: Extensions?
+// MARK: - TrackSegment
+
+/// Represents a segment of a track.
+public struct TrackSegment: Codable {
+    public var trackpoints: [Waypoint] = []  // List of waypoints that make up this segment.
 
     enum CodingKeys: String, CodingKey {
         case trackpoints = "trkpt"
-        case extensions
     }
-}
-
-// MARK: - Extensions
-struct Extensions: Codable {
-    // Extend based on specific requirements.
-    // This struct can contain any elements that you need to support but aren't part of the GPX 1.1 specification.
 }
