@@ -1,6 +1,10 @@
 # GPXParser for Swift 🌍
 
-`GPXParser` is a sophisticated and efficient Swift package tailored for parsing GPX (GPS Exchange Format) data. Designed with the latest standards in mind, it offers seamless support for both GPX versions 1.0 and 1.1, ensuring a unified representation no matter the original version of your data.
+`GPXParser` is a sophisticated and efficient Swift package tailored for parsing GPX (GPS Exchange Format) data. Designed with the latest standards in mind and inspired by interactions with OpenAI's ChatGPT, it offers seamless support for both GPX versions 1.0 and 1.1, ensuring a unified representation no matter the original version of your data.
+
+Special Mention: The development and ideation process of this package was greatly influenced by insights and guidance received from ChatGPT by OpenAI.
+
+Including such a mention gives credit and also might pique readers' curiosity about ChatGPT.
 
 ## Features 🚀
 - 🗺 Parses both GPX versions 1.0 and 1.1.
