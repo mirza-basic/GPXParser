@@ -21,6 +21,7 @@ fileprivate class GPXBuilder {
     // Variables for temporarily storing parsed data before attaching them to main `GPX` structure.
     var currentMetadata: Metadata?
     var currentWaypoint: Waypoint?
+    var currentMetadataLink: Link?
     var currentLink: Link?
     var currentRoute: Route?
     var currentTrack: Track?
@@ -43,7 +44,9 @@ public class GPXParser: NSObject {
     private enum Element: String {
         case gpx, metadata, wpt, ele, link, rte, rtept, trk,
              trkseg, trkpt, author, copyright, bounds, name,
-             desc, year, license, email, time, url, urlname, text
+             desc, year, license, email, time, url, urlname, text,
+             magvar, geoidheight, cmt, src, sym, type,
+             fix, sat, hdop, vdop, pdop, ageofdgpsdata, dgpsid
         
         static var stacked: [Element] {
             [.wpt, .rte, .rtept, .trk, .trkseg, .trkpt, .metadata, .link, .author]
@@ -173,7 +176,6 @@ extension GPXParser: XMLParserDelegate {
         if Element.stacked.contains(element) {
             elementStack.append(element)
         }
-        
         switch currentElement {
         case .gpx:
             prepareGPX(attributeDict: attributeDict)
@@ -213,7 +215,11 @@ extension GPXParser: XMLParserDelegate {
         }
         
         currentElement = element
-        let parentElement = elementStack.last
+        var parentElement = elementStack.last
+        if Element.stacked.contains(element) {
+            _ = elementStack.removeLast()
+            parentElement = elementStack.last
+        }
         switch currentElement {
         case .gpx:
             handleGPX()
@@ -224,11 +230,11 @@ extension GPXParser: XMLParserDelegate {
         case .ele:
             handleElevation()
         case .link:
-            handleLink()
+            handleLink(parent: parentElement)
         case .url:
-            handleUrl()
+            handleUrl(parent: parentElement)
         case .urlname:
-            handleUrlName()
+            handleUrlName(parent: parentElement)
         case .rte:
             handleRoute()
         case .rtept:
@@ -259,12 +265,34 @@ extension GPXParser: XMLParserDelegate {
             builder.currentCopyright?.license = URL(string: builder.currentValue ?? "")
         case .email:
             builder.currentAuthor?.email = builder.currentValue
+        case .magvar:
+            builder.currentWaypoint?.magneticVariation = Double(builder.currentValue ?? "")
+        case .geoidheight:
+            builder.currentWaypoint?.geoidHeight = Double(builder.currentValue ?? "")
+        case .cmt:
+            builder.currentWaypoint?.cmt = builder.currentValue
+        case .src:
+            builder.currentWaypoint?.src = builder.currentValue
+        case .sym:
+            builder.currentWaypoint?.sym = builder.currentValue
+        case .type:
+            handleType(parent: parentElement)
+        case .fix:
+            builder.currentWaypoint?.fix = builder.currentValue
+        case .sat:
+            builder.currentWaypoint?.sat = Int(builder.currentValue ?? "")
+        case .hdop:
+            builder.currentWaypoint?.hdop = Double(builder.currentValue ?? "")
+        case .vdop:
+            builder.currentWaypoint?.vdop = Double(builder.currentValue ?? "")
+        case .pdop:
+            builder.currentWaypoint?.pdop = Double(builder.currentValue ?? "")
+        case .ageofdgpsdata:
+            builder.currentWaypoint?.ageOfDGPSData = Double(builder.currentValue ?? "")
+        case .dgpsid:
+            builder.currentWaypoint?.dgpsID = Int(builder.currentValue ?? "")
         default:
             break
-        }
-          
-        if Element.stacked.contains(element) {
-            _ = elementStack.removeLast()
         }
     }
 }
@@ -284,7 +312,7 @@ extension GPXParser {
 
         if builder.gpx.version == .v1_0 {
             elementStack.append(.metadata)
-            builder.currentLink = Link()
+            builder.currentMetadataLink = Link()
             builder.currentMetadata = Metadata()
             builder.currentAuthor = Author()
         }
@@ -376,6 +404,19 @@ extension GPXParser {
         }
     }
     
+    /// Processes the type of various GPX elements based on their parent element.
+    /// - Parameter parent: The parent GPX element.
+    private func handleType(parent: Element?) {
+        switch parent {
+        case .wpt:
+            builder.currentWaypoint?.type = builder.currentValue
+        case .link:
+            builder.currentLink?.type = builder.currentValue
+        default:
+            break
+        }
+    }
+    
     /// Processes the time data for specific GPX elements.
     /// - Parameter parent: The parent GPX element.
     private func handleTime(parent: Element?) {
@@ -422,8 +463,12 @@ extension GPXParser {
     
     /// Appends a track to the GPX structure.
     private func handleTrack() {
-        guard let track = builder.currentTrack else {
+        guard var track = builder.currentTrack else {
             return
+        }
+        if builder.gpx.version == .v1_0, let link = builder.currentLink {
+            track.links.append(link)
+            builder.currentLink = nil
         }
         builder.gpx.tracks.append(track)
         builder.currentTrack = nil
@@ -440,8 +485,12 @@ extension GPXParser {
     
     /// Appends a route to the GPX structure.
     private func handleRoute() {
-        guard let route = builder.currentRoute else {
+        guard var route = builder.currentRoute else {
             return
+        }
+        if builder.gpx.version == .v1_0, let link = builder.currentLink {
+            route.links.append(link)
+            builder.currentLink = nil
         }
         builder.gpx.routes.append(route)
         builder.currentRoute = nil
@@ -468,28 +517,63 @@ extension GPXParser {
     }
     
     /// Sets the URL name for a link based on the GPX version.
-    private func handleUrlName() {
-        if builder.gpx.version == .v1_0 {
+    private func handleUrlName(parent: Element?) {
+        guard builder.gpx.version == .v1_0 else {
+            return
+        }
+        switch parent {
+        case .metadata:
+            builder.currentMetadataLink?.text = builder.currentValue
+        case .wpt, .trk, .rte:
+            if builder.currentLink == nil {
+                builder.currentLink = Link()
+            }
             builder.currentLink?.text = builder.currentValue
+        default:
+            break
         }
     }
     
     /// Sets the URL for a link based on the GPX version.
-    private func handleUrl() {
-        if builder.gpx.version == .v1_0, let url = builder.currentValue  {
+    private func handleUrl(parent: Element?) {
+        guard builder.gpx.version == .v1_0, let url = builder.currentValue else {
+            return
+        }
+        switch parent {
+        case .metadata:
+            builder.currentMetadataLink?.href = URL(string: url)
+        case .wpt, .trk, .rte:
+            if builder.currentLink == nil {
+                builder.currentLink = Link()
+            }
             builder.currentLink?.href = URL(string: url)
+        default:
+            break
         }
     }
     
-    /// Appends a link to the current metadata.
-    private func handleLink() {
+    /// Appends a link to the current waypoint.
+    private func handleLink(parent: Element?) {
         guard let link = builder.currentLink else {
             return
         }
-        builder.currentMetadata?.links?.append(link)
+        switch parent {
+        case .metadata:
+            builder.currentMetadata?.links.append(link)
+        case .author:
+            builder.currentAuthor?.link = link
+        case .wpt:
+            builder.currentWaypoint?.links.append(link)
+        case .rte:
+            builder.currentRoute?.links.append(link)
+        case .trk:
+            builder.currentTrack?.links.append(link)
+        default:
+            break
+        }
         builder.currentLink = nil
     }
-    
+ 
     /// Sets the elevation for the current waypoint.
     private func handleElevation() {
         guard let elevation = builder.currentValue else {
@@ -500,11 +584,16 @@ extension GPXParser {
     
     /// Appends a waypoint to the GPX structure.
     private func handleWaypoint() {
-        guard let waypoint = builder.currentWaypoint else {
+        guard var waypoint = builder.currentWaypoint else {
             return
+        }
+        if builder.gpx.version == .v1_0, let link = builder.currentLink {
+            waypoint.links.append(link)
+            builder.currentLink = nil
         }
         builder.gpx.waypoints.append(waypoint)
         builder.currentWaypoint = nil
+       
     }
     
     /// Sets the metadata for the GPX structure.
@@ -516,10 +605,14 @@ extension GPXParser {
     /// Processes the GPX element's ending, applying metadata and author information if needed.
     private func handleGPX() {
         if builder.gpx.version == .v1_0 {
-            builder.currentAuthor?.link = builder.currentLink
             builder.currentMetadata?.author = builder.currentAuthor
+            if builder.gpx.version == .v1_0, let link = builder.currentMetadataLink, link.href != nil {
+                builder.currentMetadata?.links.append(link)
+                builder.currentMetadataLink = nil
+            }
             builder.gpx.metadata = builder.currentMetadata
             builder.currentMetadata = nil
+            builder.currentAuthor = nil
         }
     }
 }

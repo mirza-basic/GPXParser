@@ -69,7 +69,7 @@ public struct Metadata: Codable {
     public var copyright: Copyright?
     
     /// An array of links related to the content in the GPX file.
-    public var links: [Link]? = []
+    public var links: [Link] = []
     
     /// The timestamp when the data was created.
     public var time: Date?
@@ -127,8 +127,8 @@ public struct Link: Codable {
     
     enum CodingKeys: String, CodingKey {
         case href
-        case text = "text"
-        case type = "type"
+        case text
+        case type
     }
 }
 
@@ -195,7 +195,7 @@ public struct Waypoint: Codable {
     public var src: String?
     
     /// Links to additional information about the waypoint.
-    public var links: [Link]?
+    public var links: [Link] = []
     
     /// Text representation (e.g., a symbol) for displaying the waypoint on maps.
     public var sym: String?
