@@ -46,7 +46,7 @@ public class GPXParser: NSObject {
              trkseg, trkpt, author, copyright, bounds, name,
              desc, year, license, email, time, url, urlname, text,
              magvar, geoidheight, cmt, src, sym, type,
-             fix, sat, hdop, vdop, pdop, ageofdgpsdata, dgpsid
+             fix, sat, hdop, vdop, pdop, ageofdgpsdata, dgpsid, number
         
         static var stacked: [Element] {
             [.wpt, .rte, .rtept, .trk, .trkseg, .trkpt, .metadata, .link, .author]
@@ -257,6 +257,8 @@ extension GPXParser: XMLParserDelegate {
            handleName(parent: parentElement)
         case .desc:
            handleDescription(parent: parentElement)
+        case .number:
+            handleNumber(parent: parentElement)
         case .text:
            handleLinkText(parent: parentElement)
         case .year:
@@ -399,6 +401,22 @@ extension GPXParser {
             builder.currentTrack?.name = builder.currentValue
         case .author:
             builder.currentAuthor?.name = builder.currentValue
+        default:
+            break
+        }
+    }
+    
+    /// Handles the number of different GPX elements based on their parent.
+    /// - Parameter parent: The parent GPX element.
+    private func handleNumber(parent: Element?) {
+        guard let value = builder.currentValue else {
+            return
+        }
+        switch parent {
+        case .trk:
+            builder.currentTrack?.number = Int(value)
+        case .rte:
+            builder.currentRoute?.number = Int(value)
         default:
             break
         }
