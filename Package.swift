@@ -21,8 +21,8 @@ let package = Package(
         .target(
             name: "GPXParser",
             dependencies: [],
-            resources: [.process("chatgpt.gpx"),
-                        .process("mystic_basin_trail.gpx")]),
+            resources: [.process("chatgpt1_0.gpx"),
+                        .process("chatgpt1_1.gpx")]),
         .testTarget(
             name: "GPXParserTests",
             dependencies: ["GPXParser"])

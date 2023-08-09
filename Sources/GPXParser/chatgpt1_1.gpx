@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TestApp">
+  <metadata>
+    <name>Test Track 1</name>
+    <desc>Description of the track</desc>
+    <author>
+      <name>John Doe</name>
+      <email>johndoe@example.com</email>
+      <link href="http://example.com">
+        <text>Example Link</text>
+        <type>web</type>
+      </link>
+    </author>
+    <link href="http://metadata-link.com">
+      <text>Metadata Link</text>
+      <type>meta</type>
+    </link>
+    <bounds minlat="10.0" minlon="10.0" maxlat="20.0" maxlon="20.0"/>
+    <keywords>test, track</keywords>
+  </metadata>
+  <wpt lat="10.0" lon="10.0">
+      <ele>100.0</ele>
+      <time>2023-08-09T12:00:00Z</time>
+      <magvar>0.0</magvar>
+      <geoidheight>0.0</geoidheight>
+      <name>Sample Waypoint</name>
+      <cmt>Sample Comment</cmt>
+      <desc>Sample Description</desc>
+      <src>Sample Source</src>
+      <link href="http://sample-link.com">
+          <text>Sample Link</text>
+          <type>sample</type>
+      </link>
+      <sym>Sample Symbol</sym>
+      <type>Sample Type</type>
+      <fix>none</fix>
+      <sat>5</sat>
+      <hdop>0.0</hdop>
+      <vdop>0.0</vdop>
+      <pdop>0.0</pdop>
+      <ageofdgpsdata>0.0</ageofdgpsdata>
+      <dgpsid>0</dgpsid>
+  </wpt>
+  <trk>
+    <name>Track 1</name>
+    <cmt>Track Comment</cmt>
+    <desc>Track Description</desc>
+    <link href="http://track-link.com">
+      <text>Track Link</text>
+      <type>track</type>
+    </link>
+    <trkseg>
+      <trkpt lat="10.0" lon="10.0" />
+      <trkpt lat="15.0" lon="15.0" />
+      <trkpt lat="20.0" lon="20.0" />
+    </trkseg>
+  </trk>
+</gpx>

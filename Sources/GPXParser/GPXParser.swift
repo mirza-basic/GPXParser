@@ -272,7 +272,7 @@ extension GPXParser: XMLParserDelegate {
         case .geoidheight:
             builder.currentWaypoint?.geoidHeight = Double(builder.currentValue ?? "")
         case .cmt:
-            builder.currentWaypoint?.cmt = builder.currentValue
+            handleComment(parent: parentElement)
         case .src:
             builder.currentWaypoint?.src = builder.currentValue
         case .sym:
@@ -430,6 +430,21 @@ extension GPXParser {
             builder.currentWaypoint?.type = builder.currentValue
         case .link:
             builder.currentLink?.type = builder.currentValue
+        default:
+            break
+        }
+    }
+    
+    /// Handles the cmt of different GPX elements based on their parent.
+    /// - Parameter parent: The parent GPX element.
+    private func handleComment(parent: Element?) {
+        switch parent {
+        case .wpt:
+            builder.currentWaypoint?.cmt = builder.currentValue
+        case .trk:
+            builder.currentTrack?.cmt = builder.currentValue
+        case .rte:
+            builder.currentRoute?.cmt = builder.currentValue
         default:
             break
         }
