@@ -8,7 +8,7 @@
 import Foundation
 
 /// Extension providing functionality to serialize the GPX object into XML format.
-extension GPX {
+public extension GPX {
     /**
      Returns the XML representation of the GPX object.
      
@@ -45,7 +45,7 @@ extension GPX {
 }
 
 /// Extension providing functionality to serialize Metadata into XML format.
-extension Metadata {
+public extension Metadata {
     /**
      Returns the XML representation of the Metadata object.
      
@@ -94,7 +94,7 @@ extension Metadata {
 }
 
 /// Extension providing functionality to serialize Author information into XML format.
-extension Author {
+public extension Author {
     /**
      Returns the XML representation of the Author object.
      
@@ -121,7 +121,7 @@ extension Author {
 }
 
 /// Extension providing functionality to serialize Copyright information into XML format.
-extension Copyright {
+public extension Copyright {
     /**
      Returns the XML representation of the Copyright object.
      
@@ -144,7 +144,7 @@ extension Copyright {
 }
 
 /// Extension providing functionality to serialize Bounds information into XML format.
-extension Bounds {
+public extension Bounds {
     /**
      Returns the XML representation of the Bounds object.
      
@@ -158,7 +158,7 @@ extension Bounds {
 }
 
 /// Extension providing functionality to serialize Waypoint data into XML format.
-extension Waypoint {
+public extension Waypoint {
     /**
      Returns the XML representation of the Waypoint object.
      
@@ -247,7 +247,7 @@ extension Waypoint {
 }
 
 /// Extension providing functionality to serialize Link data into XML format.
-extension Link {
+public extension Link {
     /**
      Returns the XML representation of the Link object.
      
@@ -274,7 +274,7 @@ extension Link {
 }
 
 /// Extension providing functionality to serialize Route data into XML format.
-extension Route {
+public extension Route {
     /**
      Returns the XML representation of the Route object.
      
@@ -321,7 +321,7 @@ extension Route {
 }
 
 /// Extension providing functionality to serialize Track data into XML format.
-extension Track {
+public extension Track {
     /**
      Returns the XML representation of the Track object.
      
@@ -368,7 +368,7 @@ extension Track {
 }
 
 /// Extension providing functionality to serialize TrackSegment data into XML format.
-extension TrackSegment {
+public extension TrackSegment {
     /**
      Returns the XML representation of the TrackSegment object.
      
