@@ -23,6 +23,8 @@ class GPXParserTests: XCTestCase {
         
         do {
             let gpx = try parser.parseGPX(from: url)
+            let gpxXml = gpx.toXML()
+            print(gpxXml)
             
             // Test version and creator
             XCTAssertEqual(gpx.version, .v1_1)

@@ -22,7 +22,10 @@ let package = Package(
             name: "GPXParser",
             dependencies: [],
             resources: [.process("chatgpt1_0.gpx"),
-                        .process("chatgpt1_1.gpx")]),
+                        .process("chatgpt1_1.gpx"),
+                        .process("ashland.gpx"),
+                        .process("fells_loop.gpx"),
+                        .process("mystic_basin_trail.gpx")]),
         .testTarget(
             name: "GPXParserTests",
             dependencies: ["GPXParser"])
