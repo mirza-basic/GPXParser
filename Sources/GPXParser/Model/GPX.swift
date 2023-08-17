@@ -35,6 +35,15 @@ public struct GPX: Codable {
     /// An array of tracks, each representing an ordered set of points describing a path.
     public var tracks: [Track] = []
     
+    public init(version: GPXVersion? = nil, creator: String? = nil, metadata: Metadata? = nil, waypoints: [Waypoint] = [], routes: [Route] = [], tracks: [Track] = []) {
+        self.version = version
+        self.creator = creator
+        self.metadata = metadata
+        self.waypoints = waypoints
+        self.routes = routes
+        self.tracks = tracks
+    }
+    
     enum CodingKeys: String, CodingKey {
         case version, creator, metadata
         case waypoints = "wpt"
@@ -79,6 +88,18 @@ public struct Metadata: Codable {
     
     /// Minimum and maximum coordinates which describe the extent of the coordinates in the GPX file.
     public var bounds: Bounds?
+    
+    public init(name: String? = nil, desc: String? = nil, author: Author? = nil, copyright: Copyright? = nil,
+                links: [Link] = [], time: Date? = nil, keywords: String? = nil, bounds: Bounds? = nil) {
+        self.name = name
+        self.desc = desc
+        self.author = author
+        self.copyright = copyright
+        self.links = links
+        self.time = time
+        self.keywords = keywords
+        self.bounds = bounds
+    }
 }
 
 // MARK: - Author
@@ -94,6 +115,12 @@ public struct Author: Codable {
     
     /// Link to the web site or other external information about the author.
     public var link: Link?
+
+    public init(name: String? = nil, email: String? = nil, link: Link? = nil) {
+        self.name = name
+        self.email = email
+        self.link = link
+    }
 }
 
 // MARK: - Copyright
@@ -109,6 +136,12 @@ public struct Copyright: Codable {
     
     /// URL linking to the license on the web.
     public var license: URL?
+    
+    public init(author: String? = nil, year: String? = nil, license: URL? = nil) {
+        self.author = author
+        self.year = year
+        self.license = license
+    }
 }
 
 // MARK: - Link
@@ -129,6 +162,12 @@ public struct Link: Codable {
         case href
         case text
         case type
+    }
+    
+    public init(href: URL? = nil, text: String? = nil, type: String? = nil) {
+        self.href = href
+        self.text = text
+        self.type = type
     }
 }
 
@@ -154,6 +193,13 @@ public struct Bounds: Codable {
         case minLon = "minlon"
         case maxLat = "maxlat"
         case maxLon = "maxlon"
+    }
+    
+    public init(minLat: Latitude, minLon: Longitude, maxLat: Latitude, maxLon: Longitude) {
+        self.minLat = minLat
+        self.minLon = minLon
+        self.maxLat = maxLat
+        self.maxLon = maxLon
     }
 }
 
@@ -232,6 +278,33 @@ public struct Waypoint: Codable {
         case links = "link"
         case sym, type, fix, sat, hdop, vdop, pdop, ageOfDGPSData, dgpsID
     }
+    
+    public init(latitude: Latitude, longitude: Longitude, elevation: Elevation? = nil, time: Date? = nil,
+         magneticVariation: Double? = nil, geoidHeight: Double? = nil, name: String? = nil, cmt: String? = nil,
+         desc: String? = nil, src: String? = nil, links: [Link] = [], sym: String? = nil, type: String? = nil,
+         fix: String? = nil, sat: Int? = nil, hdop: Double? = nil, vdop: Double? = nil, pdop: Double? = nil,
+         ageOfDGPSData: Double? = nil, dgpsID: Int? = nil) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.elevation = elevation
+        self.time = time
+        self.magneticVariation = magneticVariation
+        self.geoidHeight = geoidHeight
+        self.name = name
+        self.cmt = cmt
+        self.desc = desc
+        self.src = src
+        self.links = links
+        self.sym = sym
+        self.type = type
+        self.fix = fix
+        self.sat = sat
+        self.hdop = hdop
+        self.vdop = vdop
+        self.pdop = pdop
+        self.ageOfDGPSData = ageOfDGPSData
+        self.dgpsID = dgpsID
+    }
 }
 
 // MARK: - TraRouteck
@@ -270,6 +343,17 @@ public struct Route: Codable {
         case links = "link"
         case number, type
         case routePoints = "rtept"
+    }
+    
+    public init(name: String? = nil, cmt: String? = nil, desc: String? = nil, src: String? = nil, links: [Link] = [], number: Int? = nil, type: String? = nil, routePoints: [Waypoint] = []) {
+        self.name = name
+        self.cmt = cmt
+        self.desc = desc
+        self.src = src
+        self.links = links
+        self.number = number
+        self.type = type
+        self.routePoints = routePoints
     }
 }
 
@@ -310,6 +394,17 @@ public struct Track: Codable {
         case number, type
         case segments = "trkseg"
     }
+    
+    public init(name: String? = nil, cmt: String? = nil, desc: String? = nil, src: String? = nil, links: [Link] = [], number: Int? = nil, type: String? = nil, segments: [TrackSegment] = []) {
+        self.name = name
+        self.cmt = cmt
+        self.desc = desc
+        self.src = src
+        self.links = links
+        self.number = number
+        self.type = type
+        self.segments = segments
+    }
 }
 
 // MARK: - TrackSegment
@@ -320,5 +415,9 @@ public struct TrackSegment: Codable {
 
     enum CodingKeys: String, CodingKey {
         case trackpoints = "trkpt"
+    }
+    
+    public init(trackpoints: [Waypoint] = []) {
+        self.trackpoints = trackpoints
     }
 }
