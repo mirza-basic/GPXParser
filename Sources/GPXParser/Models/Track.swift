@@ -44,7 +44,16 @@ public struct Track: Codable {
         case segments = "trkseg"
     }
 
-    public init(name: String? = nil, cmt: String? = nil, desc: String? = nil, src: String? = nil, links: [Link] = [], number: Int? = nil, type: String? = nil, segments: [TrackSegment] = []) {
+    public init(
+        name: String? = nil,
+        cmt: String? = nil,
+        desc: String? = nil,
+        src: String? = nil,
+        links: [Link] = [],
+        number: Int? = nil,
+        type: String? = nil,
+        segments: [TrackSegment] = []
+    ) {
         self.name = name
         self.cmt = cmt
         self.desc = desc

@@ -46,7 +46,13 @@ class XMLFormatter: NSObject, XMLParserDelegate {
         }
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
         formattedXML += "\n" + String(repeating: "\t", count: level) + "<\(elementName)"
         for (key, value) in attributeDict {
             formattedXML += " \(key)=\"\(value)\""
@@ -55,7 +61,12 @@ class XMLFormatter: NSObject, XMLParserDelegate {
         level += 1
     }
 
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?
+    ) {
         level -= 1
         if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             formattedXML += text

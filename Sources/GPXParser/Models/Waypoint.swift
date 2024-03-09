@@ -77,9 +77,23 @@ public struct Waypoint: Codable {
         case latitude = "lat"
         case longitude = "lon"
         case elevation = "ele"
-        case time, magneticVariation = "magvar", geoidHeight = "geoidheight", name, cmt, desc, src
+        case time
+        case magneticVariation = "magvar"
+        case geoidHeight = "geoidheight"
+        case name
+        case cmt
+        case desc
+        case src
         case links = "link"
-        case sym, type, fix, sat, hdop, vdop, pdop, ageOfDGPSData, dgpsID
+        case sym
+        case type
+        case fix
+        case sat
+        case hdop
+        case vdop
+        case pdop
+        case ageOfDGPSData
+        case dgpsID
     }
 
     public init(

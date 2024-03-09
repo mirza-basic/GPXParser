@@ -35,7 +35,14 @@ public struct GPX: Codable {
     /// An array of tracks, each representing an ordered set of points describing a path.
     public var tracks: [Track] = []
 
-    public init(version: GPXVersion? = nil, creator: String? = nil, metadata: Metadata? = nil, waypoints: [Waypoint] = [], routes: [Route] = [], tracks: [Track] = []) {
+    public init(
+        version: GPXVersion? = nil,
+        creator: String? = nil,
+        metadata: Metadata? = nil,
+        waypoints: [Waypoint] = [],
+        routes: [Route] = [],
+        tracks: [Track] = []
+    ) {
         self.version = version
         self.creator = creator
         self.metadata = metadata

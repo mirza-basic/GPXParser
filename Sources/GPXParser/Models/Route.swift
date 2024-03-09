@@ -44,7 +44,16 @@ public struct Route: Codable {
         case routePoints = "rtept"
     }
 
-    public init(name: String? = nil, cmt: String? = nil, desc: String? = nil, src: String? = nil, links: [Link] = [], number: Int? = nil, type: String? = nil, routePoints: [Waypoint] = []) {
+    public init(
+        name: String? = nil,
+        cmt: String? = nil,
+        desc: String? = nil,
+        src: String? = nil,
+        links: [Link] = [],
+        number: Int? = nil,
+        type: String? = nil,
+        routePoints: [Waypoint] = []
+    ) {
         self.name = name
         self.cmt = cmt
         self.desc = desc
