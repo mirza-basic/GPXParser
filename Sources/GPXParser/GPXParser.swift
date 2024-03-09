@@ -15,9 +15,9 @@ import Foundation
 ///
 /// By leveraging this design, the parser ensures the consistent handling and representation of GPX data, regardless
 /// of its original version, making it easier for the subsequent processing and manipulation of the parsed data.
-fileprivate class GPXBuilder {
+private class GPXBuilder {
     var gpx = GPX()
-    
+
     // Variables for temporarily storing parsed data before attaching them to main `GPX` structure.
     var currentMetadata: Metadata?
     var currentWaypoint: Waypoint?
@@ -30,7 +30,7 @@ fileprivate class GPXBuilder {
     var currentCopyright: Copyright?
     var currentBounds: Bounds?
     var currentValue: String?
-    
+
     // Date formatter for handling time strings in the GPX XML.
     let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
@@ -47,7 +47,7 @@ public class GPXParser: NSObject {
              desc, year, license, email, time, url, urlname, text,
              magvar, geoidheight, cmt, src, sym, type,
              fix, sat, hdop, vdop, pdop, ageofdgpsdata, dgpsid, number
-        
+
         static var stacked: [Element] {
             [.wpt, .rte, .rtept, .trk, .trkseg, .trkpt, .metadata, .link, .author]
         }
@@ -56,14 +56,14 @@ public class GPXParser: NSObject {
     private enum Atribute: String {
         case version, creator, lat, lon, href, author, minlat, minlon, maxlat, maxlon
     }
-    
+
     /// The `GPXBuilder` instance used by the parser to build a `GPX` object from XML data.
     ///
     /// This builder keeps track of the current state and provides methods to accumulate data
     /// as the XML parsing progresses. It also encapsulates the complex object creation logic
     /// ensuring that the `GPXParser` focuses only on parsing tasks.
     private var builder: GPXBuilder = GPXBuilder()
-    
+
     /// A stack to keep track of the nested XML elements as they are parsed.
     ///
     /// This stack helps to understand the context or hierarchy of the XML as it's parsed.
@@ -71,13 +71,13 @@ public class GPXParser: NSObject {
     /// and decide where the parsed data should be stored. This is especially useful for XML
     /// formats like GPX which can have deeply nested structures.
     private var elementStack: [Element] = []
-    
+
     /// The current XML element being processed by the parser.
     ///
     /// This property is updated every time the parser starts or ends processing an element.
     /// It helps in determining what action should be taken based on the current element and its content.
     private var currentElement: Element?
-   
+
     /// Parses a GPX (GPS Exchange Format) file from a given `URL`.
     ///
     /// This function attempts to initialize an XML parser with the given URL and parse the GPX contents.
@@ -106,9 +106,9 @@ public class GPXParser: NSObject {
         guard let parser = XMLParser(contentsOf: url) else {
             throw GPXParserError.initializationError("Failed to initialize the XML parser with the given URL.")
         }
-        
+
         parser.delegate = self
-        
+
         if parser.parse() {
             return builder.gpx
         } else {
@@ -119,7 +119,7 @@ public class GPXParser: NSObject {
             }
         }
     }
-    
+
     /// Parses a GPX (GPS Exchange Format) data from a given `Data` object.
     ///
     /// This function attempts to initialize an XML parser with the provided data and parse the GPX contents.
@@ -148,7 +148,7 @@ public class GPXParser: NSObject {
     public func parseGPX(from data: Data) throws -> GPX {
         let parser = XMLParser(data: data)
         parser.delegate = self
-        
+
         if parser.parse() {
             return builder.gpx
         } else {
@@ -166,13 +166,13 @@ public class GPXParser: NSObject {
 /// Extension of GPXParser to conform to the XMLParserDelegate protocol. This extension manages the parsing
 /// of the GPX (GPS Exchange Format) XML data, transforming the XML elements into their corresponding GPX objects.
 extension GPXParser: XMLParserDelegate {
-    public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         guard let element = Element(rawValue: elementName) else {
             return
         }
         builder.currentValue = nil
         currentElement = element
-        
+
         if Element.stacked.contains(element) {
             elementStack.append(element)
         }
@@ -201,19 +201,19 @@ extension GPXParser: XMLParserDelegate {
             break
         }
     }
-    
+
     public func parser(_ parser: XMLParser, foundCharacters string: String) {
         let value = string.trimmingCharacters(in: .whitespacesAndNewlines)
         if !value.isEmpty {
             builder.currentValue = value
         }
     }
-    
+
     public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         guard let element = Element(rawValue: elementName) else {
             return
         }
-        
+
         currentElement = element
         var parentElement = elementStack.last
         if Element.stacked.contains(element) {
@@ -303,10 +303,10 @@ extension GPXParser: XMLParserDelegate {
 
 /// Extension containing helper functions for preparing the `GPXParser` state based on parsed XML attributes.
 extension GPXParser {
-    
+
     /// Prepares the GPX object by setting its version and creator.
     /// - Parameter attributeDict: The attributes dictionary associated with the GPX element.
-    private func prepareGPX(attributeDict: [String : String]) {
+    private func prepareGPX(attributeDict: [String: String]) {
         if let version = attributeDict[Atribute.version.rawValue] {
             builder.gpx.version = GPXVersion(rawValue: version)
         }
@@ -319,42 +319,42 @@ extension GPXParser {
             builder.currentAuthor = Author()
         }
     }
-    
+
     /// Prepares a waypoint object based on latitude and longitude attributes.
     /// - Parameter attributeDict: The attributes dictionary associated with the waypoint element.
-    private func prepareWaypoint(attributeDict: [String : String]) {
+    private func prepareWaypoint(attributeDict: [String: String]) {
         if let latValue = attributeDict[Atribute.lat.rawValue], let lat = Double(latValue),
            let lonValue = attributeDict[Atribute.lon.rawValue], let lon = Double(lonValue) {
             builder.currentWaypoint = Waypoint(latitude: lat, longitude: lon)
         }
     }
-    
+
     /// Prepares a link object using href attribute.
     /// - Parameter attributeDict: The attributes dictionary associated with the link element.
-    private func prepareLink(attributeDict: [String : String]) {
+    private func prepareLink(attributeDict: [String: String]) {
         if let hrefValue = attributeDict[Atribute.href.rawValue], let href = URL(string: hrefValue) {
             builder.currentLink = Link(href: href)
         }
     }
-    
+
     /// Prepares an author object based on the GPX version.
     private func prepareAuthor() {
         if builder.gpx.version == .v1_1 {
             builder.currentAuthor = Author()
         }
     }
-    
+
     /// Prepares a copyright object using the author attribute.
     /// - Parameter attributeDict: The attributes dictionary associated with the copyright element.
-    private func prepareCopyright(attributeDict: [String : String]) {
+    private func prepareCopyright(attributeDict: [String: String]) {
         if let author = attributeDict[Atribute.author.rawValue] {
             builder.currentCopyright = Copyright(author: author)
         }
     }
-    
+
     /// Prepares a bounds object using minimum and maximum latitude and longitude attributes.
     /// - Parameter attributeDict: The attributes dictionary associated with the bounds element.
-    private func prepareBounds(attributeDict: [String : String]) {
+    private func prepareBounds(attributeDict: [String: String]) {
         if let minLatValue = attributeDict[Atribute.minlat.rawValue], let minLat = Double(minLatValue),
            let minLonValue = attributeDict[Atribute.minlon.rawValue], let minLon = Double(minLonValue),
            let maxLatValue = attributeDict[Atribute.maxlat.rawValue], let maxLat = Double(maxLatValue),
@@ -369,7 +369,7 @@ extension GPXParser {
 /// Extension containing helper functions to handle the completion of parsed XML elements,
 /// and update the state or structures of the `GPXParser`.
 extension GPXParser {
-    
+
     /// Handles the description of different GPX elements based on their parent.
     /// - Parameter parent: The parent GPX element.
     private func handleDescription(parent: Element?) {
@@ -386,7 +386,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Processes the name of various GPX elements based on their parent element.
     /// - Parameter parent: The parent GPX element.
     private func handleName(parent: Element?) {
@@ -405,7 +405,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Handles the number of different GPX elements based on their parent.
     /// - Parameter parent: The parent GPX element.
     private func handleNumber(parent: Element?) {
@@ -421,7 +421,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Processes the type of various GPX elements based on their parent element.
     /// - Parameter parent: The parent GPX element.
     private func handleType(parent: Element?) {
@@ -434,7 +434,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Handles the cmt of different GPX elements based on their parent.
     /// - Parameter parent: The parent GPX element.
     private func handleComment(parent: Element?) {
@@ -449,7 +449,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Processes the time data for specific GPX elements.
     /// - Parameter parent: The parent GPX element.
     private func handleTime(parent: Element?) {
@@ -465,7 +465,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Updates the author information based on the GPX version.
     private func handleAuthor() {
         if builder.gpx.version == .v1_0 {
@@ -475,7 +475,7 @@ extension GPXParser {
             builder.currentAuthor = nil
         }
     }
-    
+
     /// Adds a trackpoint to the current segment.
     private func handleTrackpoint() {
         guard let trackpoint = builder.currentWaypoint else {
@@ -484,7 +484,7 @@ extension GPXParser {
         builder.currentSegment?.trackpoints.append(trackpoint)
         builder.currentWaypoint = nil
     }
-    
+
     /// Appends a track segment to the current track.
     private func handleTrackSegment() {
         guard let segment = builder.currentSegment else {
@@ -493,7 +493,7 @@ extension GPXParser {
         builder.currentTrack?.segments.append(segment)
         builder.currentSegment = nil
     }
-    
+
     /// Appends a track to the GPX structure.
     private func handleTrack() {
         guard var track = builder.currentTrack else {
@@ -506,7 +506,7 @@ extension GPXParser {
         builder.gpx.tracks.append(track)
         builder.currentTrack = nil
     }
-    
+
     /// Adds a route point to the current route.
     private func handleRoutePoint() {
         guard let routePoint = builder.currentWaypoint else {
@@ -515,7 +515,7 @@ extension GPXParser {
         builder.currentRoute?.routePoints.append(routePoint)
         builder.currentWaypoint = nil
     }
-    
+
     /// Appends a route to the GPX structure.
     private func handleRoute() {
         guard var route = builder.currentRoute else {
@@ -528,7 +528,7 @@ extension GPXParser {
         builder.gpx.routes.append(route)
         builder.currentRoute = nil
     }
-    
+
     /// Sets the text of a link element.
     /// - Parameter parent: The parent GPX element.
     private func handleLinkText(parent: Element?) {
@@ -536,19 +536,19 @@ extension GPXParser {
             builder.currentLink?.text = builder.currentValue
         }
     }
-    
+
     /// Updates the bounds of the current metadata object.
     private func handleBounds() {
         builder.currentMetadata?.bounds = builder.currentBounds
         builder.currentBounds = nil
     }
-    
+
     /// Sets the copyright for the current metadata.
     private func handleCopright() {
         builder.currentMetadata?.copyright = builder.currentCopyright
         builder.currentCopyright = nil
     }
-    
+
     /// Sets the URL name for a link based on the GPX version.
     private func handleUrlName(parent: Element?) {
         guard builder.gpx.version == .v1_0 else {
@@ -566,7 +566,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Sets the URL for a link based on the GPX version.
     private func handleUrl(parent: Element?) {
         guard builder.gpx.version == .v1_0, let url = builder.currentValue else {
@@ -584,7 +584,7 @@ extension GPXParser {
             break
         }
     }
-    
+
     /// Appends a link to the current waypoint.
     private func handleLink(parent: Element?) {
         guard let link = builder.currentLink else {
@@ -606,7 +606,7 @@ extension GPXParser {
         }
         builder.currentLink = nil
     }
- 
+
     /// Sets the elevation for the current waypoint.
     private func handleElevation() {
         guard let elevation = builder.currentValue else {
@@ -614,7 +614,7 @@ extension GPXParser {
         }
         builder.currentWaypoint?.elevation = Double(elevation)
     }
-    
+
     /// Appends a waypoint to the GPX structure.
     private func handleWaypoint() {
         guard var waypoint = builder.currentWaypoint else {
@@ -626,15 +626,15 @@ extension GPXParser {
         }
         builder.gpx.waypoints.append(waypoint)
         builder.currentWaypoint = nil
-       
+
     }
-    
+
     /// Sets the metadata for the GPX structure.
     private func handleMetadata() {
         builder.gpx.metadata = builder.currentMetadata
         builder.currentMetadata = nil
     }
-    
+
     /// Processes the GPX element's ending, applying metadata and author information if needed.
     private func handleGPX() {
         if builder.gpx.version == .v1_0 {

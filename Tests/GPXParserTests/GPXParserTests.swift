@@ -2,30 +2,30 @@ import XCTest
 @testable import GPXParser
 
 class GPXParserTests: XCTestCase {
-    
+
     var parser: GPXParser!
 
     override func setUp() {
         super.setUp()
         parser = GPXParser()
     }
-    
+
     override func tearDown() {
         parser = nil
         super.tearDown()
     }
-    
+
     func testGPXParserFor1_1Version() {
         guard let url = Bundle.module.url(forResource: "chatgpt1_1", withExtension: "gpx") else {
             XCTFail("Failed to load chatgpt1_0.gpx")
             return
         }
-        
+
         do {
             let gpx = try parser.parseGPX(from: url)
             let gpxXml = gpx.toXML()
             print(gpxXml)
-            
+
             // Test version and creator
             XCTAssertEqual(gpx.version, .v1_1)
             XCTAssertEqual(gpx.creator, "TestApp")
@@ -37,7 +37,7 @@ class GPXParserTests: XCTestCase {
             XCTAssertEqual(metadata?.links.first?.href?.absoluteString, "http://metadata-link.com")
             XCTAssertEqual(metadata?.links.first?.text, "Metadata Link")
             XCTAssertEqual(metadata?.links.first?.type, "meta")
-            
+
             // Test author properties
             let author = metadata?.author
             XCTAssertEqual(author?.name, "John Doe")
@@ -73,7 +73,7 @@ class GPXParserTests: XCTestCase {
             XCTAssertEqual(waypoint?.pdop, 0.0)
             XCTAssertEqual(waypoint?.ageOfDGPSData, 0.0)
             XCTAssertEqual(waypoint?.dgpsID, 0)
-            
+
             // Test track
             let track = gpx.tracks.first
             XCTAssertEqual(track?.name, "Track 1")
@@ -85,21 +85,21 @@ class GPXParserTests: XCTestCase {
             let segment = track?.segments.first
             XCTAssertEqual(segment?.trackpoints.count, 3)
             XCTAssertEqual(segment?.trackpoints.count, 3)
-            
+
         } catch {
             XCTFail("Failed to parse chatgpt1_1.gpx with error: \(error)")
         }
     }
-    
+
     func testGPXParserFor1_0Version() {
         guard let url = Bundle.module.url(forResource: "chatgpt1_0", withExtension: "gpx") else {
             XCTFail("Failed to load chatgpt1_0.gpx")
             return
         }
-        
+
         do {
             let gpx = try parser.parseGPX(from: url)
-            
+
             // Test version and creator
             XCTAssertEqual(gpx.version, .v1_0)
             XCTAssertEqual(gpx.creator, "TestApp")
@@ -111,7 +111,7 @@ class GPXParserTests: XCTestCase {
             XCTAssertEqual(metadata?.links.first?.href?.absoluteString, "http://example.com")
             XCTAssertEqual(metadata?.links.first?.text, "Example Link")
             XCTAssertNil(metadata?.links.first?.type)
-            
+
             // Test author properties
             let author = metadata?.author
             XCTAssertEqual(author?.name, "John Doe")
@@ -144,7 +144,7 @@ class GPXParserTests: XCTestCase {
             XCTAssertEqual(waypoint?.pdop, 0.0)
             XCTAssertEqual(waypoint?.ageOfDGPSData, 0.0)
             XCTAssertEqual(waypoint?.dgpsID, 0)
-            
+
             // Test track
             let track = gpx.tracks.first
             XCTAssertEqual(track?.name, "Track 1")
@@ -156,7 +156,7 @@ class GPXParserTests: XCTestCase {
             let segment = track?.segments.first
             XCTAssertEqual(segment?.trackpoints.count, 3)
             XCTAssertEqual(segment?.trackpoints.count, 3)
-            
+
         } catch {
             XCTFail("Failed to parse chatgpt1_0.gpx with error: \(error)")
         }

@@ -26,7 +26,6 @@ extension String {
     }
 }
 
-
 class XMLFormatter: NSObject, XMLParserDelegate {
     var formattedXML = ""
     private var level = 0
@@ -35,7 +34,7 @@ class XMLFormatter: NSObject, XMLParserDelegate {
 
     init(withXML xml: String) {
         super.init()
-        
+
         if let declarationRange = xml.range(of: "^<\\?xml.*?\\?>", options: .regularExpression) {
             xmlDeclaration = String(xml[declarationRange])
         }
@@ -47,7 +46,7 @@ class XMLFormatter: NSObject, XMLParserDelegate {
         }
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         formattedXML += "\n" + String(repeating: "\t", count: level) + "<\(elementName)"
         for (key, value) in attributeDict {
             formattedXML += " \(key)=\"\(value)\""

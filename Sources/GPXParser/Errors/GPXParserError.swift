@@ -11,7 +11,7 @@ enum GPXParserError: Error {
     case initializationError(String)   // For errors that occur during XMLParser initialization
     case parsingError(String)          // For errors specifically from the XMLParser
     case general(String)               // For other general, non-specific errors
-    
+
     var localizedDescription: String {
         switch self {
         case .initializationError(let description):
