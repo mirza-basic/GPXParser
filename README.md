@@ -19,7 +19,7 @@ You can use The [Swift Package Manager](https://swift.org/package-manager/) to i
 
 ```
 swift
-.package(url: "https://github.com/mirza-basic/GPXParser.git", from: "0.3.0")
+.package(url: "https://github.com/mirza-basic/GPXParser.git", from: "1.0.0")
 ```
 
 
